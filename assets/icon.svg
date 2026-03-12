@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Background rounded rect -->
+  <rect width="1024" height="1024" rx="180" ry="180" fill="#0A0F1E"/>
+
+  <!-- Glow circle behind shield -->
+  <circle cx="512" cy="490" r="260" fill="#F59E0B" opacity="0.15"/>
+
+  <!-- Shield shape -->
+  <path d="
+    M512 220
+    L700 300
+    L700 490
+    C700 600 620 690 512 740
+    C404 690 324 600 324 490
+    L324 300
+    Z
+  " fill="#F59E0B"/>
+
+  <!-- Shield inner highlight (subtle bevel) -->
+  <path d="
+    M512 255
+    L672 325
+    L672 490
+    C672 585 605 663 512 707
+    C419 663 352 585 352 490
+    L352 325
+    Z
+  " fill="#FCD34D" opacity="0.25"/>
+
+  <!-- Bold "B" letter inside shield -->
+  <text
+    x="512"
+    y="560"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="280"
+    font-weight="900"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="white"
+    letter-spacing="-8"
+  >B</text>
+</svg>

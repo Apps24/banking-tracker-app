@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1284" height="2778" viewBox="0 0 1284 2778">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A0F1E"/>
+      <stop offset="100%" stop-color="#1E293B"/>
+    </linearGradient>
+
+    <!-- Shield clip path -->
+    <clipPath id="shieldClip">
+      <path d="
+        M642 1089
+        L782 1149
+        L782 1269
+        C782 1339 734 1399 642 1439
+        C550 1399 502 1339 502 1269
+        L502 1149
+        Z
+      "/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1284" height="2778" fill="url(#bgGradient)"/>
+
+  <!-- Dot grid pattern: every 40px, r=1.5, gold 5% opacity -->
+  <g fill="#F59E0B" opacity="0.05">
+    <!-- Generate dot grid across full canvas -->
+    <rect x="0" y="0" width="1284" height="2778" fill="none"/>
+    <!-- Using a pattern approach with individual dots approximated as a dense grid -->
+    <!-- Pattern tile: 40x40 with one dot at center -->
+  </g>
+
+  <!-- Dot grid via SVG pattern -->
+  <defs>
+    <pattern id="dotGrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <circle cx="20" cy="20" r="1.5" fill="#F59E0B" opacity="0.05"/>
+    </pattern>
+  </defs>
+  <rect width="1284" height="2778" fill="url(#dotGrid)"/>
+
+  <!-- Glow behind shield -->
+  <circle cx="642" cy="1264" r="220" fill="#F59E0B" opacity="0.12"/>
+
+  <!-- Shield shape (280x280 equivalent, centered at 642, 1264) -->
+  <path d="
+    M642 1089
+    L782 1149
+    L782 1289
+    C782 1379 722 1449 642 1489
+    C562 1449 502 1379 502 1289
+    L502 1149
+    Z
+  " fill="#F59E0B"/>
+
+  <!-- Shield inner highlight -->
+  <path d="
+    M642 1116
+    L754 1166
+    L754 1282
+    C754 1361 706 1420 642 1454
+    C578 1420 530 1361 530 1282
+    L530 1166
+    Z
+  " fill="#FCD34D" opacity="0.22"/>
+
+  <!-- "B" letter inside shield -->
+  <text
+    x="642"
+    y="1310"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="190"
+    font-weight="900"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="white"
+    letter-spacing="-5"
+  >B</text>
+
+  <!-- "BankTracker" text -->
+  <text
+    x="642"
+    y="1570"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="64"
+    font-weight="700"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="#F59E0B"
+    letter-spacing="-1"
+  >BankTracker</text>
+
+  <!-- Tagline text -->
+  <text
+    x="642"
+    y="1650"
+    font-family="'Space Grotesk', 'Helvetica Neue', Arial, sans-serif"
+    font-size="28"
+    font-weight="400"
+    text-anchor="middle"
+    dominant-baseline="middle"
+    fill="#64748B"
+    letter-spacing="0.5"
+  >Your finances, simplified</text>
+</svg>
