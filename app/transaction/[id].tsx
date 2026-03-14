@@ -25,8 +25,8 @@ import { CATEGORY_META, ALL_CATEGORIES } from '../../lib/utils/categories';
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function TypeBadge({ type }: { type: 'credit' | 'debit' }) {
-  const isCredit = type === 'credit';
+function TypeBadge({ type }: { type: 'CREDIT' | 'DEBIT' }) {
+  const isCredit = type === 'CREDIT';
   return (
     <View
       style={[
@@ -181,10 +181,10 @@ export default function TransactionDetailScreen() {
     );
   }
 
-  const isCredit = tx.type === 'credit';
+  const isCredit = tx.type === 'CREDIT';
   const amountColor = isCredit ? '#34D399' : '#F87171';
   const { Icon, bg, color, label: catLabel } = CATEGORY_META[tx.category];
-  const lastFour = tx.accountNumber?.slice(-4);
+  const lastFour = tx.account?.accountNumber?.slice(-4);
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
@@ -216,7 +216,7 @@ export default function TransactionDetailScreen() {
             onPress={() => setShowCatPicker(true)}
           />
           <View style={styles.sep} />
-          <DetailRow label="Bank" value={tx.bank} />
+          <DetailRow label="Bank" value={tx.bank?.name ?? ""} />
           {lastFour && (
             <>
               <View style={styles.sep} />
@@ -234,9 +234,9 @@ export default function TransactionDetailScreen() {
             </>
           )}
           <View style={styles.sep} />
-          <DetailRow label="Date" value={formatDate(tx.date)} />
+          <DetailRow label="Date" value={formatDate(tx.smsDate)} />
           <View style={styles.sep} />
-          <DetailRow label="Time" value={formatTime(tx.date)} />
+          <DetailRow label="Time" value={formatTime(tx.smsDate)} />
           {tx.reference && (
             <>
               <View style={styles.sep} />

@@ -60,6 +60,12 @@
           "faceIDPermission": "Allow BankTracker to use Face ID for authentication."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "eeea8dd6-008f-421a-aa6f-49dcba97a356"
+      }
+    }
   }
 }

@@ -5,8 +5,6 @@ import { CATEGORY_META } from '../../lib/utils/categories';
 import { formatTransactionAmount, formatCompact } from '../../lib/utils/formatCurrency';
 import { formatRelative } from '../../lib/utils/formatDate';
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 interface TransactionCardProps {
   transaction: Transaction;
   onPress?: () => void;
@@ -14,16 +12,17 @@ interface TransactionCardProps {
 
 export function TransactionCard({ transaction, onPress }: TransactionCardProps) {
   const router = useRouter();
-  const meta = CATEGORY_META[transaction.category];
+  const meta = CATEGORY_META[transaction.category] ?? CATEGORY_META['OTHER'];
   const { Icon, bg, color } = meta;
 
-  const isCredit = transaction.type === 'credit';
+  const isCredit = transaction.type === 'CREDIT';
   const amountColor = isCredit ? '#34D399' : '#F87171';
   const amountStr = formatTransactionAmount(transaction.amount, transaction.type);
 
   const displayName = transaction.merchant || transaction.description;
-  const lastFour = transaction.accountNumber?.slice(-4);
-  const bankLabel = lastFour ? `${transaction.bank} ···· ${lastFour}` : transaction.bank;
+  const lastFour = transaction.account?.accountNumber?.slice(-4);
+  const bankName = transaction.bank?.name ?? '';
+  const bankLabel = lastFour ? `${bankName} ···· ${lastFour}` : bankName;
 
   const handlePress = () => {
     if (onPress) {
@@ -39,22 +38,19 @@ export function TransactionCard({ transaction, onPress }: TransactionCardProps) 
       onPress={handlePress}
       android_ripple={{ color: '#1E293B' }}
     >
-      {/* Category icon circle */}
       <View style={[styles.iconCircle, { backgroundColor: bg }]}>
         <Icon size={18} color={color} />
       </View>
 
-      {/* Merchant + meta */}
       <View style={styles.details}>
         <Text style={styles.name} numberOfLines={1}>
           {displayName}
         </Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {formatRelative(transaction.date)} · {bankLabel}
+          {formatRelative(transaction.smsDate)} · {bankLabel}
         </Text>
       </View>
 
-      {/* Amount + balance */}
       <View style={styles.amountCol}>
         <Text style={[styles.amount, { color: amountColor }]}>{amountStr}</Text>
         {transaction.balance != null && (

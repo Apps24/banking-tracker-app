@@ -214,22 +214,15 @@ export function SmsSync({ visible, onClose, onSyncComplete }: SmsSyncProps) {
       }));
 
       const result = await transactionsApi.batchSms(payload);
-      const added = result.data ?? [];
+      // Backend returns { success, data: { total, parsed, skipped, failed } }
+      const stats = (result.data as any)?.data ?? { parsed: 0 };
 
       // Persist synced UIDs
       const syncedIds = await getSyncedIds();
       toSync.forEach((m) => syncedIds.add(m.uid));
       await saveSyncedIds(syncedIds);
 
-      // Compute stats from server-parsed results
-      let credits = 0;
-      let debits = 0;
-      added.forEach((tx: any) => {
-        if (tx.type === 'credit') credits += tx.amount ?? 0;
-        else debits += tx.amount ?? 0;
-      });
-
-      setSuccessStats({ count: added.length, credits, debits });
+      setSuccessStats({ count: stats.parsed ?? 0, credits: 0, debits: 0 });
 
       // Invalidate queries
       await Promise.all([

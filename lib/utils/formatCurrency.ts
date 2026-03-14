@@ -46,14 +46,14 @@ export function formatCompact(amount: number): string {
  * Use directly in className props: <Text className={getTypeColor(tx.type)} />
  */
 export function getTypeColor(type: TransactionType): 'text-emerald-400' | 'text-rose-400' {
-  return type === 'credit' ? 'text-emerald-400' : 'text-rose-400';
+  return type === 'CREDIT' ? 'text-emerald-400' : 'text-rose-400';
 }
 
 /**
  * Returns the sign prefix (+/-) for an amount based on transaction type.
  */
 export function getTypePrefix(type: TransactionType): '+' | '-' {
-  return type === 'credit' ? '+' : '-';
+  return type === 'CREDIT' ? '+' : '-';
 }
 
 /**

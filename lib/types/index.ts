@@ -1,22 +1,21 @@
 // ─── Enums / Union types ────────────────────────────────────────────────────
+// Must match Prisma enum values in the backend schema exactly (uppercase).
 
-export type TransactionType = 'credit' | 'debit';
+export type TransactionType = 'CREDIT' | 'DEBIT';
 
 export type TransactionCategory =
-  | 'transfer'
-  | 'airtime'
-  | 'data'
-  | 'bills'
-  | 'pos'
-  | 'atm'
-  | 'shopping'
-  | 'food'
-  | 'transport'
-  | 'salary'
-  | 'investment'
-  | 'loan'
-  | 'reversal'
-  | 'other';
+  | 'FOOD'
+  | 'TRANSPORT'
+  | 'SHOPPING'
+  | 'UTILITIES'
+  | 'ENTERTAINMENT'
+  | 'HEALTH'
+  | 'EDUCATION'
+  | 'SALARY'
+  | 'TRANSFER'
+  | 'ATM'
+  | 'EMI'
+  | 'OTHER';
 
 // ─── Core entities ──────────────────────────────────────────────────────────
 
@@ -24,8 +23,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone?: string | null;
   image?: string | null;
+  avatar?: string | null;
   emailVerified: boolean;
   createdAt: string;
   updatedAt: string;
@@ -35,42 +35,39 @@ export interface Bank {
   id: string;
   name: string;
   shortCode: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
   color?: string;
 }
 
 export interface Account {
   id: string;
-  userId: string;
   bankId: string;
-  bank?: Bank;
   accountNumber: string;
-  accountName: string;
-  balance: number;
-  currency: string;
-  isDefault: boolean;
-  createdAt: string;
-  updatedAt: string;
+  accountType: string;
+  nickname?: string | null;
 }
 
 export interface Transaction {
   id: string;
   userId: string;
-  accountId?: string;
+  accountId: string;
   account?: Account;
+  bankId: string;
+  bank?: Bank;
   type: TransactionType;
   amount: number;
   currency: string;
   description: string;
-  merchant?: string;
-  bank: string;
-  accountNumber?: string;
-  reference?: string;
-  balance?: number;
-  date: string;
+  merchant?: string | null;
+  fromIdentifier?: string | null;
+  toIdentifier?: string | null;
+  transactionMode?: string;
+  reference?: string | null;
+  balance?: number | null;
+  smsDate: string;
   rawSms?: string;
   category: TransactionCategory;
-  isRecurring?: boolean;
+  isVerified?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -96,7 +93,6 @@ export interface ApiError {
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-// Better Auth GET /api/auth/session response shape
 export interface Session {
   session: {
     id: string;
@@ -129,8 +125,9 @@ export interface CategoryBreakdown {
 }
 
 export interface MonthlyTrend {
-  month: string;
-  inflow: number;
-  outflow: number;
+  month: number;
+  monthName: string;
+  credit: number;
+  debit: number;
   net: number;
 }

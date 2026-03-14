@@ -26,7 +26,7 @@ export function useInfiniteTransactions(params: Omit<TransactionsParams, 'page' 
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: ['transaction', id],
-    queryFn: () => transactionsApi.getById(id).then((r) => r.data),
+    queryFn: () => transactionsApi.getById(id).then((r) => r.data.data),
     enabled: !!id,
   });
 }

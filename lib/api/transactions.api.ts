@@ -4,7 +4,7 @@ import { Transaction, TransactionCategory } from '../types';
 export interface TransactionsParams {
   page?: number;
   limit?: number;
-  type?: 'credit' | 'debit';
+  type?: 'CREDIT' | 'DEBIT';
   bank?: string;
   startDate?: string;
   endDate?: string;

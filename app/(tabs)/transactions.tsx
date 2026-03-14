@@ -85,7 +85,7 @@ function buildFlatList(txs: Transaction[]): { items: ListItem[]; headerIndices: 
   const groups = new Map<string, Transaction[]>();
 
   for (const tx of txs) {
-    const key = toISODate(tx.date);
+    const key = toISODate(tx.smsDate);
     const g = groups.get(key);
     if (g) g.push(tx);
     else groups.set(key, [tx]);
@@ -93,8 +93,8 @@ function buildFlatList(txs: Transaction[]): { items: ListItem[]; headerIndices: 
 
   for (const [dateKey, dayTxs] of groups) {
     headerIndices.push(items.length);
-    const credit = dayTxs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0);
-    const debit  = dayTxs.filter(t => t.type === 'debit' ).reduce((s, t) => s + t.amount, 0);
+    const credit = dayTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
+    const debit  = dayTxs.filter(t => t.type === 'DEBIT' ).reduce((s, t) => s + t.amount, 0);
     items.push({ type: 'header', dateKey, label: getDateLabel(dateKey), credit, debit });
     for (const tx of dayTxs) items.push({ type: 'tx', tx });
   }
@@ -397,7 +397,7 @@ export default function TransactionsScreen() {
 
   // ── Query params derived from filter state ─────────────────────────────────
   const queryParams = useMemo(() => ({
-    type:       filters.type !== 'all' ? filters.type : undefined,
+    type:       filters.type !== 'all' ? (filters.type.toUpperCase() as 'CREDIT' | 'DEBIT') : undefined,
     startDate:  filters.startDate,
     endDate:    filters.endDate,
     search:     debouncedSearch || undefined,
@@ -430,11 +430,11 @@ export default function TransactionsScreen() {
 
   // ── Aggregate stats ────────────────────────────────────────────────────────
   const totalCredit = useMemo(
-    () => allTxs.filter(t => t.type === 'credit').reduce((s, t) => s + t.amount, 0),
+    () => allTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0),
     [allTxs]
   );
   const totalDebit = useMemo(
-    () => allTxs.filter(t => t.type === 'debit').reduce((s, t) => s + t.amount, 0),
+    () => allTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0),
     [allTxs]
   );
 
