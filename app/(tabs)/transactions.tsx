@@ -93,8 +93,8 @@ function buildFlatList(txs: Transaction[]): { items: ListItem[]; headerIndices: 
 
   for (const [dateKey, dayTxs] of groups) {
     headerIndices.push(items.length);
-    const credit = dayTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0);
-    const debit  = dayTxs.filter(t => t.type === 'DEBIT' ).reduce((s, t) => s + t.amount, 0);
+    const credit = dayTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + Number(t.amount), 0);
+    const debit  = dayTxs.filter(t => t.type === 'DEBIT' ).reduce((s, t) => s + Number(t.amount), 0);
     items.push({ type: 'header', dateKey, label: getDateLabel(dateKey), credit, debit });
     for (const tx of dayTxs) items.push({ type: 'tx', tx });
   }
@@ -396,14 +396,24 @@ export default function TransactionsScreen() {
   }, [searchText]);
 
   // ── Query params derived from filter state ─────────────────────────────────
-  const queryParams = useMemo(() => ({
-    type:       filters.type !== 'all' ? (filters.type.toUpperCase() as 'CREDIT' | 'DEBIT') : undefined,
-    startDate:  filters.startDate,
-    endDate:    filters.endDate,
-    search:     debouncedSearch || undefined,
-    categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
-    sort:       filters.sort !== 'date_desc' ? filters.sort : undefined,
-  }), [filters, debouncedSearch]);
+  const queryParams = useMemo(() => {
+    const SORT_MAP: Record<SortOption, { sortBy: 'smsDate' | 'amount'; sortOrder: 'asc' | 'desc' }> = {
+      date_desc:   { sortBy: 'smsDate', sortOrder: 'desc' },
+      date_asc:    { sortBy: 'smsDate', sortOrder: 'asc'  },
+      amount_desc: { sortBy: 'amount',  sortOrder: 'desc' },
+      amount_asc:  { sortBy: 'amount',  sortOrder: 'asc'  },
+    };
+    const { sortBy, sortOrder } = SORT_MAP[filters.sort];
+    return {
+      type:       filters.type !== 'all' ? (filters.type.toUpperCase() as 'CREDIT' | 'DEBIT') : undefined,
+      startDate:  filters.startDate,
+      endDate:    filters.endDate,
+      search:     debouncedSearch || undefined,
+      categories: filters.categories.length > 0 ? filters.categories.join(',') : undefined,
+      sortBy:     sortBy !== 'smsDate' || sortOrder !== 'desc' ? sortBy    : undefined,
+      sortOrder:  sortBy !== 'smsDate' || sortOrder !== 'desc' ? sortOrder : undefined,
+    };
+  }, [filters, debouncedSearch]);
 
   const {
     data,
@@ -413,28 +423,21 @@ export default function TransactionsScreen() {
     fetchNextPage,
   } = useInfiniteTransactions(queryParams);
 
-  // ── Flatten + client-side sort/filter ─────────────────────────────────────
-  const allTxs = useMemo(() => {
-    let txs = data?.pages.flatMap((p) => p.data) ?? [];
-    // Client-side category post-filter (for multi-select when server only pre-filters)
-    if (filters.categories.length > 0) {
-      txs = txs.filter((t) => filters.categories.includes(t.category));
-    }
-    // Client-side amount sorting
-    if (filters.sort === 'amount_desc') txs = [...txs].sort((a, b) => b.amount - a.amount);
-    if (filters.sort === 'amount_asc')  txs = [...txs].sort((a, b) => a.amount - b.amount);
-    return txs;
-  }, [data, filters.categories, filters.sort]);
+  // ── Flatten pages ──────────────────────────────────────────────────────────
+  const allTxs = useMemo(
+    () => data?.pages.flatMap((p) => (p as any).data as Transaction[]) ?? [],
+    [data],
+  );
 
   const { items, headerIndices } = useMemo(() => buildFlatList(allTxs), [allTxs]);
 
   // ── Aggregate stats ────────────────────────────────────────────────────────
   const totalCredit = useMemo(
-    () => allTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + t.amount, 0),
+    () => allTxs.filter(t => t.type === 'CREDIT').reduce((s, t) => s + Number(t.amount), 0),
     [allTxs]
   );
   const totalDebit = useMemo(
-    () => allTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + t.amount, 0),
+    () => allTxs.filter(t => t.type === 'DEBIT').reduce((s, t) => s + Number(t.amount), 0),
     [allTxs]
   );
 

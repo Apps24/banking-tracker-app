@@ -3,13 +3,15 @@ import { PermissionsAndroid } from 'react-native';
 
 // ── Bank sender IDs ───────────────────────────────────────────────────────────
 // Indian bank SMS gateway sender IDs (VM- = verified message, AM- = alert message)
-const BANK_SENDER_IDS = [
+export const BANK_SENDER_IDS = [
+  // DBS
+  'VM-DBSBNK', 'JM-DBSBNK',
   // HDFC Bank
-  'VM-HDFCBK', 'AM-HDFCBK', 'VK-HDFCBK',
+  'VM-HDFCBK', 'AM-HDFCBK', 'VK-HDFCBK', 'JX-HDFCBK', 'JM-HDFCBK', 'AD-HDFCBK', 'VD-HDFCBK', 'AX-HDFCBK',
   // SBI
   'VM-SBIINB', 'AM-SBIINB', 'VM-SBIPSG', 'AM-SBIPSG',
   // ICICI Bank
-  'VM-ICICIB', 'AM-ICICIB', 'VK-ICICIB',
+  'VM-ICICIB', 'AM-ICICIB', 'VK-ICICIB', 'AD-ICICIT',
   // Axis Bank
   'VM-AXISBK', 'AM-AXISBK', 'VK-AXISBK',
   // Kotak Bank
@@ -37,7 +39,7 @@ const BANK_SENDER_IDS = [
 ];
 
 // Keywords that indicate a transactional SMS
-const BANK_KEYWORDS = ['debited', 'credited', 'Rs.', 'INR', 'debit', 'credit'];
+export const BANK_KEYWORDS = ['debited', 'credited', 'Rs.', 'INR', 'debit', 'credit'];
 
 export interface SmsScanResult {
   sender: string;
@@ -82,8 +84,11 @@ export async function requestSmsPermission(): Promise<boolean> {
 // ── SMS reader ────────────────────────────────────────────────────────────────
 
 /**
- * Reads inbox SMS messages from the last `daysBack` days, filtered by
- * known bank sender IDs and transaction keywords.
+ * Reads ALL inbox SMS from the last `daysBack` days and filters by
+ * transaction keywords (debited, credited, Rs., INR, etc.).
+ *
+ * Uses a broad search (no sender filter) so it reliably finds bank SMS
+ * regardless of the exact sender ID format used by the carrier.
  *
  * Returns null on iOS (unsupported) or if the native module is unavailable.
  */
@@ -103,36 +108,25 @@ export async function readBankSms(
   if (!SmsAndroid) return null;
 
   const minDate = Date.now() - daysBack * 24 * 60 * 60 * 1000;
-
-  const results: SmsScanResult[] = [];
-
-  // Query each sender separately — the library OR-filters by address only
-  // when one address is given per request.
-  for (const sender of BANK_SENDER_IDS) {
-    const messages = await querySms(SmsAndroid, sender, minDate);
-    results.push(...messages);
-  }
+  const results = await querySmsAll(SmsAndroid, minDate);
 
   // Sort newest first
   results.sort((a, b) => b.receivedAt.getTime() - a.receivedAt.getTime());
   return results;
 }
 
-function querySms(
+/**
+ * Reads all inbox SMS (no sender filter) from minDate onward,
+ * then filters by BANK_KEYWORDS on the JS side.
+ */
+export function querySmsAll(
   SmsAndroid: any,
-  address: string,
   minDate: number,
+  maxCount = 500,
 ): Promise<SmsScanResult[]> {
   return new Promise((resolve) => {
-    const filter = {
-      box: 'inbox',
-      address,
-      minDate,
-      maxCount: 200,
-    };
-
     SmsAndroid.list(
-      JSON.stringify(filter),
+      JSON.stringify({ box: 'inbox', minDate, maxCount }),
       (_fail: string) => resolve([]),
       (_count: number, smsList: string) => {
         try {
@@ -145,12 +139,12 @@ function querySms(
               );
             })
             .map((sms) => {
-              const date = sms.date ? new Date(sms.date) : new Date();
+              const date = sms.date ? new Date(Number(sms.date)) : new Date();
               return {
-                sender: sms.address ?? address,
+                sender: sms.address ?? '',
                 body: sms.body ?? '',
                 receivedAt: date,
-                uid: `${sms.address ?? address}_${sms.date ?? Date.now()}`,
+                uid: `${sms.address ?? 'unknown'}_${sms.date ?? Date.now()}`,
               };
             });
           resolve(filtered);

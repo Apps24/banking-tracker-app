@@ -177,18 +177,24 @@ export function SmsSync({ visible, onClose, onSyncComplete }: SmsSyncProps) {
     hasScanned.current = true;
     setStep('scanning');
 
+    console.log('[SMS SYNC] ── STEP 1: Starting SMS scan (last 90 days)');
+
     const messages = await readBankSms(90);
     if (!messages) {
-      // iOS or native module unavailable — can't proceed
+      console.warn('[SMS SYNC] ── STEP 1: ❌ readBankSms returned null — iOS or native module unavailable');
       setStep('permission');
       return;
     }
 
+    console.log(`[SMS SYNC] ── STEP 1: ✅ Raw bank SMS found: ${messages.length}`, messages.map(m => ({ sender: m.sender, uid: m.uid, preview: m.body.slice(0, 60) })));
     setScanCount(messages.length);
 
     // Filter already-synced UIDs
     const syncedIds = await getSyncedIds();
+    console.log(`[SMS SYNC] ── STEP 2: Already-synced IDs in SecureStore: ${syncedIds.size}`, [...syncedIds].slice(-5));
+
     const fresh = messages.filter((m) => !syncedIds.has(m.uid));
+    console.log(`[SMS SYNC] ── STEP 2: ✅ Fresh (not yet synced): ${fresh.length} of ${messages.length}`);
 
     setFoundSms(fresh);
     setSelected(new Set(fresh.map((m) => m.uid)));
@@ -206,25 +212,54 @@ export function SmsSync({ visible, onClose, onSyncComplete }: SmsSyncProps) {
     setIsSyncing(true);
     const toSync = foundSms.filter((m) => selected.has(m.uid));
 
+    console.log(`[SMS SYNC] ── STEP 3: Sending ${toSync.length} messages in chunks of 50`);
+
+    const CHUNK = 50;
+    const totalStats = { parsed: 0, skipped: 0, failed: 0 };
+    const syncedIds = await getSyncedIds();
+
     try {
-      const payload = toSync.map((m) => ({
-        sender: m.sender,
-        body: m.body,
-        receivedAt: m.receivedAt.toISOString(),
-      }));
+      for (let i = 0; i < toSync.length; i += CHUNK) {
+        const chunk = toSync.slice(i, i + CHUNK);
+        const payload = chunk.map((m) => ({
+          sender: m.sender,
+          body: m.body,
+          receivedAt: m.receivedAt.toISOString(),
+        }));
 
-      const result = await transactionsApi.batchSms(payload);
-      // Backend returns { success, data: { total, parsed, skipped, failed } }
-      const stats = (result.data as any)?.data ?? { parsed: 0 };
+        console.log(`[SMS SYNC] ── Batch ${Math.floor(i / CHUNK) + 1}: sending ${chunk.length} messages`);
 
-      // Persist synced UIDs
-      const syncedIds = await getSyncedIds();
-      toSync.forEach((m) => syncedIds.add(m.uid));
-      await saveSyncedIds(syncedIds);
+        let sent = false;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const result = await transactionsApi.batchSms(payload);
+            const stats = (result.data as any)?.data ?? {};
+            totalStats.parsed  += stats.parsed  ?? 0;
+            totalStats.skipped += stats.skipped ?? 0;
+            totalStats.failed  += stats.failed  ?? 0;
+            console.log(`[SMS SYNC] ── Batch ${Math.floor(i / CHUNK) + 1} attempt ${attempt}: ✅ parsed:${stats.parsed} skipped:${stats.skipped}`);
+            sent = true;
+            break;
+          } catch (e: any) {
+            console.warn(`[SMS SYNC] ── Batch ${Math.floor(i / CHUNK) + 1} attempt ${attempt}: ❌ ${e?.message}`);
+            if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
+          }
+        }
+        if (!sent) {
+          console.error(`[SMS SYNC] ── Batch ${Math.floor(i / CHUNK) + 1}: gave up after 3 attempts`);
+          totalStats.failed += chunk.length;
+          continue;
+        }
 
-      setSuccessStats({ count: stats.parsed ?? 0, credits: 0, debits: 0 });
+        // Save UIDs after each successful batch
+        chunk.forEach((m) => syncedIds.add(m.uid));
+        await saveSyncedIds(syncedIds);
+      }
 
-      // Invalidate queries
+      console.log(`[SMS SYNC] ── DONE: total parsed:${totalStats.parsed} skipped:${totalStats.skipped} failed:${totalStats.failed}`);
+
+      setSuccessStats({ count: totalStats.parsed, credits: 0, debits: 0 });
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['transactions'] }),
         queryClient.invalidateQueries({ queryKey: ['summary'] }),
@@ -236,8 +271,6 @@ export function SmsSync({ visible, onClose, onSyncComplete }: SmsSyncProps) {
 
       onSyncComplete?.(new Date());
       setStep('success');
-    } catch (e) {
-      // Keep on preview — user can retry
     } finally {
       setIsSyncing(false);
     }

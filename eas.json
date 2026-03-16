@@ -11,7 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://banking-tracker-api.vercel.app/api/v1",
+        "EXPO_PUBLIC_API_URL": "https://banking-tracker-api-brmw.onrender.com/api/v1",
         "EXPO_PUBLIC_APP_NAME": "BankTracker"
       }
     },
@@ -21,7 +21,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://banking-tracker-api.vercel.app/api/v1",
+        "EXPO_PUBLIC_API_URL": "https://banking-tracker-api-brmw.onrender.com/api/v1",
         "EXPO_PUBLIC_APP_NAME": "BankTracker"
       }
     },
@@ -30,7 +30,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.banktracker.app/api/v1",
+        "EXPO_PUBLIC_API_URL": "https://banking-tracker-api-brmw.onrender.com/api/v1",
         "EXPO_PUBLIC_APP_NAME": "BankTracker"
       }
     }

@@ -5,13 +5,13 @@ export interface TransactionsParams {
   page?: number;
   limit?: number;
   type?: 'CREDIT' | 'DEBIT';
-  bank?: string;
+  bankId?: string;
   startDate?: string;
   endDate?: string;
   search?: string;
-  category?: string;
-  categories?: string;  // comma-separated for multi-select
-  sort?: string;        // e.g. "date_desc" | "date_asc" | "amount_desc" | "amount_asc"
+  categories?: string;  // comma-separated, e.g. "FOOD,SHOPPING"
+  sortBy?: 'smsDate' | 'amount' | 'createdAt';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface TransactionsPage {
@@ -24,7 +24,7 @@ export const transactionsApi = {
   getAll: (params?: TransactionsParams) =>
     apiClient.get<TransactionsPage>('/transactions', { params }),
 
-  getById: (id: string) => apiClient.get<Transaction>(`/transactions/${id}`),
+  getById: (id: string) => apiClient.get<{ success: boolean; data: Transaction }>(`/transactions/${id}`),
 
   create: (data: Partial<Transaction>) => apiClient.post<Transaction>('/transactions', data),
 

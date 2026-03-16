@@ -16,6 +16,7 @@ import {
 import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import Toast from 'react-native-toast-message';
 import { useAuthStore } from '../lib/store/authStore';
+import { useAutoSmsTracker } from '../lib/hooks/useAutoSmsTracker';
 import { OfflineBanner } from '../components/common/OfflineBanner';
 import '../global.css';
 
@@ -34,6 +35,13 @@ const queryClient = new QueryClient({
 
 // ── AppState refresh ──────────────────────────────────────────────────────────
 // Invalidates stale transaction and analytics data when the app foregrounds.
+// ── Auto SMS tracker ──────────────────────────────────────────────────────────
+// Listens for incoming bank SMS and auto-syncs them to the API (Android only).
+function AutoSmsTracker() {
+  useAutoSmsTracker();
+  return null;
+}
+
 function AppStateRefresh() {
   const qc = useQueryClient();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -114,6 +122,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AppStateRefresh />
+          <AutoSmsTracker />
           <RootLayoutNav />
           <OfflineBanner />
           <Toast topOffset={60} />

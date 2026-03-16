@@ -227,7 +227,7 @@ export default function HomeScreen() {
   const chartData: DayBar[] = Array.from({ length: 7 }, (_, i) => {
     const d = subDays(today, 6 - i);
     const iso = toISODate(d);
-    const found = dailyData?.find((x) => x.date === iso);
+    const found = dailyData?.find((x:any) => x.date === iso);
     return {
       day: format(d, 'EEE'),
       credit: found?.credit ?? 0,

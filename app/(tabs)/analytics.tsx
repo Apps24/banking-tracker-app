@@ -180,8 +180,8 @@ export default function AnalyticsScreen() {
     () =>
       (dailyQ.data ?? []).map((d, i) => ({
         x: i,
-        credit: d.credit,
-        debit: d.debit,
+        credit: Number(d.credit),
+        debit: Number(d.debit),
       })),
     [dailyQ.data],
   );
@@ -189,9 +189,9 @@ export default function AnalyticsScreen() {
   const pieData = useMemo(() => {
     const items = categoryQ.data ?? [];
     const top6 = items.slice(0, 6);
-    const othersTotal = items.slice(6).reduce((s, c) => s + c.amount, 0);
+    const othersTotal = items.slice(6).reduce((s, c) => s + Number(c.amount), 0);
     const result = top6.map((c, i) => ({
-      value: c.amount,
+      value: Number(c.amount),
       label: CATEGORY_META[c.category as TransactionCategory]?.label ?? c.category,
       color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
       category: c.category,
@@ -206,15 +206,15 @@ export default function AnalyticsScreen() {
     () =>
       (monthlyQ.data ?? []).map((m, i) => ({
         x: i,
-        inflow: m.credit,
-        outflow: m.debit,
+        inflow: Number(m.credit),
+        outflow: Number(m.debit),
       })),
     [monthlyQ.data],
   );
 
   const maxBank = useMemo(() => {
     const items = banksQ.data ?? [];
-    return items.reduce((max, b) => Math.max(max, b.total), 0);
+    return items.reduce((max, b) => Math.max(max, Number(b.total)), 0);
   }, [banksQ.data]);
 
   const summary     = summaryQ.data;
@@ -366,7 +366,7 @@ export default function AnalyticsScreen() {
         ) : (banksQ.data ?? []).length > 0 ? (
           <View style={styles.chartCard}>
             {(banksQ.data ?? []).map((bank) => {
-              const pct = maxBank > 0 ? (bank.total / maxBank) * 100 : 0;
+              const pct = maxBank > 0 ? (Number(bank.total) / maxBank) * 100 : 0;
               return (
                 <View key={bank.bank} style={styles.bankRow}>
                   <View style={styles.bankTop}>

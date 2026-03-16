@@ -18,7 +18,6 @@ import Constants from 'expo-constants';
 import Modal from 'react-native-modal';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  User,
   Shield,
   Fingerprint,
   Lock,
@@ -29,11 +28,13 @@ import {
   ChevronRight,
   Plus,
   Camera,
+  Check,
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../../lib/store/authStore';
 import { authApi } from '../../lib/api/auth.api';
 import { apiClient } from '../../lib/api/client';
+import { banksApi } from '../../lib/api/banks.api';
 import { SmsSync } from '../../components/SmsSync';
 import { Input } from '../../components/ui/Input';
 import { Skeleton } from '../../components/ui/Skeleton';
@@ -43,6 +44,26 @@ import { formatDate } from '../../lib/utils/formatDate';
 
 const LAST_SYNCED_KEY = 'bt_last_synced';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
+
+// Pre-configured Indian banks — smsPattern is a regex tested against the sender ID
+const PRESET_BANKS = [
+  { name: 'HDFC Bank',     shortCode: 'HDFC',  smsPattern: 'HDFCBK',  color: '#004C8F' },
+  { name: 'DBS Bank',      shortCode: 'DBS',   smsPattern: 'DBSBNK',  color: '#E60028' },
+  { name: 'ICICI Bank',    shortCode: 'ICICI', smsPattern: 'ICICIB',  color: '#F58220' },
+  { name: 'SBI',           shortCode: 'SBI',   smsPattern: 'SBIINB|SBIPSG', color: '#0066B3' },
+  { name: 'Axis Bank',     shortCode: 'AXIS',  smsPattern: 'AXISBK',  color: '#97144D' },
+  { name: 'Kotak Bank',    shortCode: 'KOTAK', smsPattern: 'KOTAKB',  color: '#ED1C24' },
+  { name: 'IndusInd Bank', shortCode: 'INDUS', smsPattern: 'INDUSB',  color: '#1B3C8C' },
+  { name: 'Yes Bank',      shortCode: 'YES',   smsPattern: 'YESBKS',  color: '#003087' },
+  { name: 'Federal Bank',  shortCode: 'FED',   smsPattern: 'FEDBNK',  color: '#003478' },
+  { name: 'IDFC First',    shortCode: 'IDFC',  smsPattern: 'IDFCFB',  color: '#6DC2E9' },
+  { name: 'Bank of India', shortCode: 'BOI',   smsPattern: 'BOIIND',  color: '#00529B' },
+  { name: 'PNB',           shortCode: 'PNB',   smsPattern: 'PNBSMS',  color: '#FF6600' },
+  { name: 'Canara Bank',   shortCode: 'CAN',   smsPattern: 'CANBNK',  color: '#005F32' },
+  { name: 'Bank of Baroda',shortCode: 'BOB',   smsPattern: 'BOBIFO',  color: '#F47920' },
+  { name: 'Union Bank',    shortCode: 'UBI',   smsPattern: 'UBIKOB',  color: '#003087' },
+  { name: 'RBL Bank',      shortCode: 'RBL',   smsPattern: 'RBLBNK',  color: '#E31837' },
+];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -230,6 +251,98 @@ function ChangePasswordModal({
   );
 }
 
+// ── Add Bank Modal ────────────────────────────────────────────────────────────
+
+function AddBankModal({
+  visible,
+  existingShortCodes,
+  onClose,
+  onAdded,
+}: {
+  visible: boolean;
+  existingShortCodes: string[];
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [selected, setSelected] = useState<typeof PRESET_BANKS[0] | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const available = PRESET_BANKS.filter(
+    (b) => !existingShortCodes.includes(b.shortCode),
+  );
+
+  const handleAdd = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await banksApi.create(selected);
+      onAdded();
+      setSelected(null);
+      onClose();
+    } catch {
+      Alert.alert('Error', 'Failed to add bank. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isVisible={visible} onBackdropPress={onClose} style={styles.modal}>
+      <View style={styles.modalSheet}>
+        <View style={styles.modalHandle} />
+        <Text style={styles.modalTitle}>Add Bank</Text>
+        <Text style={styles.modalSubtitle}>
+          Select your bank. The SMS pattern will be configured automatically.
+        </Text>
+        <ScrollView
+          style={styles.bankList}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {available.map((bank) => {
+            const isSelected = selected?.shortCode === bank.shortCode;
+            return (
+              <TouchableOpacity
+                key={bank.shortCode}
+                style={[styles.bankRow, isSelected && styles.bankRowSelected]}
+                onPress={() => setSelected(isSelected ? null : bank)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.bankDot, { backgroundColor: bank.color }]} />
+                <View style={styles.bankInfo}>
+                  <Text style={styles.bankName}>{bank.name}</Text>
+                  <Text style={styles.bankCode}>{bank.shortCode}</Text>
+                </View>
+                {isSelected && <Check size={18} color="#F59E0B" />}
+              </TouchableOpacity>
+            );
+          })}
+          {available.length === 0 && (
+            <Text style={styles.noBanks}>All supported banks have been added.</Text>
+          )}
+        </ScrollView>
+        <TouchableOpacity
+          style={[styles.saveBtn, (!selected || saving) && { opacity: 0.5 }]}
+          onPress={handleAdd}
+          disabled={!selected || saving}
+          activeOpacity={0.8}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#0A0F1E" />
+          ) : (
+            <Text style={styles.saveBtnText}>
+              {selected ? `Add ${selected.name}` : 'Select a bank'}
+            </Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
+          <Text style={styles.cancelBtnText}>Cancel</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
 export default function SettingsScreen() {
@@ -239,6 +352,7 @@ export default function SettingsScreen() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showChangePass, setShowChangePass]   = useState(false);
   const [showSmsSync, setShowSmsSync]         = useState(false);
+  const [showAddBank, setShowAddBank]         = useState(false);
   const [lastSynced, setLastSynced]           = useState<Date | null>(null);
   const [togglingBio, setTogglingBio]         = useState(false);
 
@@ -252,7 +366,7 @@ export default function SettingsScreen() {
   // Banks query
   const banksQ = useQuery({
     queryKey: ['banks'],
-    queryFn: () => apiClient.get<{ id: string; name: string; shortCode: string }[]>('/banks').then((r) => r.data),
+    queryFn: () => banksApi.list().then((r) => r.data.data),
   });
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -404,14 +518,14 @@ export default function SettingsScreen() {
               <SettingsRow
                 icon={<Plus size={18} color="#F59E0B" />}
                 label="Add Bank"
-                onPress={() => Alert.alert('Coming Soon', 'Bank linking is coming soon.')}
+                onPress={() => setShowAddBank(true)}
               />
             </>
           ) : (
             <SettingsRow
               icon={<Plus size={18} color="#F59E0B" />}
               label="Add Bank"
-              onPress={() => Alert.alert('Coming Soon', 'Bank linking is coming soon.')}
+              onPress={() => setShowAddBank(true)}
             />
           )}
         </View>
@@ -477,6 +591,12 @@ export default function SettingsScreen() {
         visible={showSmsSync}
         onClose={() => setShowSmsSync(false)}
         onSyncComplete={handleSyncComplete}
+      />
+      <AddBankModal
+        visible={showAddBank}
+        existingShortCodes={(banksQ.data ?? []).map((b) => b.shortCode)}
+        onClose={() => setShowAddBank(false)}
+        onAdded={() => queryClient.invalidateQueries({ queryKey: ['banks'] })}
       />
     </SafeAreaView>
   );
@@ -687,5 +807,56 @@ const styles = StyleSheet.create({
   cancelBtnText: {
     color: '#64748B',
     fontSize: 14,
+  },
+
+  // Add Bank Modal
+  modalSubtitle: {
+    color: '#64748B',
+    fontSize: 13,
+    marginBottom: 16,
+    marginTop: -12,
+  },
+  bankList: {
+    maxHeight: 360,
+    marginBottom: 16,
+  },
+  bankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    gap: 12,
+    marginBottom: 4,
+    backgroundColor: '#1E293B',
+  },
+  bankRowSelected: {
+    backgroundColor: 'rgba(245,158,11,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.4)',
+  },
+  bankDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  bankInfo: {
+    flex: 1,
+  },
+  bankName: {
+    color: '#F1F5F9',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  bankCode: {
+    color: '#64748B',
+    fontSize: 12,
+    marginTop: 1,
+  },
+  noBanks: {
+    color: '#475569',
+    fontSize: 13,
+    textAlign: 'center',
+    paddingVertical: 24,
   },
 });
