@@ -26,7 +26,16 @@ export const transactionsApi = {
 
   getById: (id: string) => apiClient.get<{ success: boolean; data: Transaction }>(`/transactions/${id}`),
 
-  create: (data: Partial<Transaction>) => apiClient.post<Transaction>('/transactions', data),
+  create: (data: {
+    type: 'CREDIT' | 'DEBIT';
+    amount: number;
+    bankId: string;
+    date: string;
+    description?: string;
+    merchant?: string;
+    category: string;
+    transactionMode?: string;
+  }) => apiClient.post<Transaction>('/transactions', data),
 
   updateCategory: (id: string, category: TransactionCategory) =>
     apiClient.patch<Transaction>(`/transactions/${id}`, { category }),

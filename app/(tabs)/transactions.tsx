@@ -25,6 +25,7 @@ import {
   Check,
 } from 'lucide-react-native';
 import { TransactionCard } from '../../components/transactions/TransactionCard';
+import { AddTransactionModal } from '../../components/AddTransactionModal';
 import { EmptyState } from '../../components/common/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { useInfiniteTransactions, useDeleteTransaction } from '../../lib/hooks/useTransactions';
@@ -388,6 +389,7 @@ export default function TransactionsScreen() {
   const [showDateModal,     setShowDateModal]     = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSortModal,     setShowSortModal]     = useState(false);
+  const [showAddModal,      setShowAddModal]      = useState(false);
 
   // ── Debounce search ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -630,6 +632,19 @@ export default function TransactionsScreen() {
         onSelect={(s) => setFilters((f) => ({ ...f, sort: s }))}
         onClose={() => setShowSortModal(false)}
       />
+      <AddTransactionModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+      />
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => setShowAddModal(true)}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.fabIcon}>＋</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -790,6 +805,28 @@ const styles = StyleSheet.create({
 
   footerSpinner: {
     paddingVertical: 20,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#F59E0B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabIcon: {
+    color: '#0A0F1E',
+    fontSize: 26,
+    fontWeight: '400',
+    lineHeight: 30,
   },
 });
 
